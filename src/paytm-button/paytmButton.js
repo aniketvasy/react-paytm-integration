@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from "react"
 const PaytmChecksum = require('./paytmChecksum');
 const https = require('https');
+// import https from 'https'
 
 export function PaytmButton () {
+  const [amount,setAmount] = useState(0)
+  const [disableButton,setDisableButton] = useState(false)
 
     const [paymentData, setPaymentData] = useState({
         token: "", 
@@ -12,12 +15,31 @@ export function PaytmButton () {
     });
     const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        initialize();
-    }, []);
+    // useEffect(() => {
+    //     initialize();
+    // }, []);
+    function inputHandler(e){
+      console.log("handler");
+      setAmount(e.target.value)
+      console.log("amount=>",amount)
+    }
+    function placeOrder(){
+      console.log("clicked")
+      console.log(amount)
+      if(amount>0){
+        initialize()
+      }
+      else{
+        alert("Please Enter Positive Amount Value")
+      }
+
+    }
 
     const initialize = () => {
-        let orderId = 'Order_'+new Date().getTime();
+      return new Promise(function(resolve,reject){
+        setDisableButton(true)
+        let orderId = 'PYTM_ORDR_'+new Date().getTime();
+        // let orderId = `PYTM_ORDR_1670914911410`;
 
         // Sandbox Credentials
         let mid = "AqSipo92499010904391"; // Merchant ID
@@ -26,23 +48,26 @@ export function PaytmButton () {
 
         paytmParams.body = {
           "requestType"  : "Payment",
-          "mid"      : mid,
-          "websiteName"  : "WEBSTAGING",
-          "orderId"    : orderId,
-          "callbackUrl"  : "http://localhost:3000/callback",
+          "mid"      : `${mid}`,
+          "websiteName"  : "DEFAULT",
+          "orderId"    : `${orderId}`,
+          "callbackUrl"  : "http://localhost:3000/",
           "txnAmount"   : {
-            "value"   : 100,
+            "value"   : `${amount}`,
             "currency" : "INR",
           },
           "userInfo"   : {
             "custId"  : '1001',
-          }
+          },
+          // "enablePaymentMode":[{"mode" : "UPI", "channels" : ["UPIPUSH"]}]
+          "disablePaymentMode":[{"mode" : "UPI", "channels" : ["UPIPUSH"]}]
+         
         };
 
         PaytmChecksum.generateSignature(JSON.stringify(paytmParams.body), mkey).then(function(checksum){
             console.log("checksum",checksum);
           paytmParams.head = {
-            "signature" : checksum
+            "signature" : `${checksum}`
           };
 
           var post_data = JSON.stringify(paytmParams);
@@ -62,38 +87,64 @@ export function PaytmButton () {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Content-Length': post_data.length
+              'Content-Length': `${post_data.length}`
             }
           };
-
+          console.log("post_data.length",post_data.length)
           var response = "";
           var post_req = https.request(options, function(post_res) {
             console.log("post_res",post_res)
             post_res.on('data', function (chunk) {
               response += chunk;
+              console.log("******res====>",response)
+              
             });
                 post_res.on('end', function(){
 
-              console.log('Response: ', response);
-              console.log('post data: ', post_data);
+
+              // console.log('Response: ', response);
+              // console.log('post data: ', post_data);
 
                     // res.json({data: JSON.parse(response), orderId: orderId, mid: mid, amount: amount});
+                 
+                    console.log("befor-data-set")
                     setPaymentData({
                         ...paymentData,
                         token: JSON.parse(response).body.txnToken,
                         order: orderId,
                         mid: mid,
-                        amount: 100
+                        amount: {amount}
                     })
+                    console.log("after-data-set",paymentData)
+                    
+                   
             });
           });
 
           post_req.write(post_data);
           post_req.end();
+          
         });
+        resolve("done")
+      }
+      )
     }
+// useEffect(()=>{
+//   makePayment()
+// },[paymentData.token])
+
+useEffect(() => {
+  console.log("=============================================")
+  if(paymentData.token){
+    console.log("-----------------------------api Callled--------------------------------------")
+    makePayment()
+  }
+
+}, [paymentData.token])
+
 
     const makePayment = () => {
+      console.log(paymentData.txnToken)
         setLoading(true);
         var config = {
             "root":"",
@@ -120,16 +171,16 @@ export function PaytmButton () {
             "payMode": {
               "labels": {},
               "filter": {
-                "exclude": []
+                // "order": ['UPI','CARD']
               },
               "order": [
-                  "CC",
-                  "DC",
-                  "NB",
+                  // "CC",
+                  // "DC",
+                  // "NB",
                   "UPI",
-                  "PPBL",
-                  "PPI",
-                  "BALANCE"
+                  // "PPBL",
+                  // "PPI",
+                  // "BALANCE"
               ]
             },
             "website": "WEBSTAGING",
@@ -161,17 +212,38 @@ export function PaytmButton () {
             console.log("Error => ", error);
         });
         }
+        setDisableButton(false)
     }
+//     async function  call(){
+  
+//      initialize()
+//      console.log(paymentData.token)
+//      console.log(paymentData)
+//     //  if(paymentData.token){
+//     //   makePayment()
+//     //  }
+ 
+// }
+// if(paymentData.token){
+//   makePayment()
+//  }
 
     return (
+      <>
+      <div className="EnterAmount">
+        <h1>Enter Amount</h1>
+        <input className="enter-amount-inpt" onChange={inputHandler}/>
+      </div>
         <div>
             {
                 loading ? (
                     <img src="https://c.tenor.com/I6kN-6X7nhAAAAAj/loading-buffering.gif" />
                 ) : (
-                    <button onClick={makePayment}>Pay Now</button>
+                    <button onClick={initialize} disabled={disableButton&& amount>0}>Pay Now</button>
                 )
             }
         </div>
+        </>
     )
+    
 }
