@@ -8,10 +8,10 @@
 }
 
 button {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-top: 20px;
+  /* position: absolute; */
+  /* left: 50%; */
+  /* transform: translateX(-50%); */
+  /* margin-top: 20px; */
   background-color: green;
   color: white;
   border: 0px;
@@ -22,12 +22,12 @@ button {
   cursor: pointer;
 }
 
-img {
+/* img {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
   margin-top: 20px;
-}
+} */
 
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
@@ -57,4 +57,29 @@ img {
   to {
     transform: rotate(360deg);
   }
+}
+
+
+.mainDiv{
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  background-color: rgba(0, 148, 198, 0.63);
+  width: 40%;
+  margin: 25px auto;
+  padding: 20px 10px;
+}
+
+.payButton{
+  margin-top: 20px;
+}
+
+.EnterAmount{
+  display: flex;
+  flex-direction: column;
+}
+
+.enter-amount-inpt{
+  padding: 5px;
 }

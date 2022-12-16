@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react"
-const PaytmChecksum = require('./paytmChecksum');
-const https = require('https');
-// import https from 'https'
+// const PaytmChecksum = require('./paytmChecksum');
+import PaytmChecksum from "./paytmChecksum";
+// const https = require('https');
+import https from 'https'
+import Swal from "sweetalert2"
 
 export function PaytmButton () {
   const [amount,setAmount] = useState(0)
   const [disableButton,setDisableButton] = useState(false)
+  const [dataP,setDataP] = useState("")
 
     const [paymentData, setPaymentData] = useState({
         token: "", 
@@ -23,17 +26,8 @@ export function PaytmButton () {
       setAmount(e.target.value)
       console.log("amount=>",amount)
     }
-    function placeOrder(){
-      console.log("clicked")
-      console.log(amount)
-      if(amount>0){
-        initialize()
-      }
-      else{
-        alert("Please Enter Positive Amount Value")
-      }
+   
 
-    }
 
     const initialize = () => {
       return new Promise(function(resolve,reject){
@@ -51,7 +45,7 @@ export function PaytmButton () {
           "mid"      : `${mid}`,
           "websiteName"  : "DEFAULT",
           "orderId"    : `${orderId}`,
-          "callbackUrl"  : "http://localhost:3000/",
+          "callbackUrl"  : `https://${window.location.hostname}`,
           "txnAmount"   : {
             "value"   : `${amount}`,
             "currency" : "INR",
@@ -171,7 +165,7 @@ useEffect(() => {
             "payMode": {
               "labels": {},
               "filter": {
-                // "order": ['UPI','CARD']
+                "order": ['UPI','CARD']
               },
               "order": [
                   // "CC",
@@ -193,9 +187,27 @@ useEffect(() => {
               "transactionStatus":function transactionStatus(paymentStatus){
                 console.log("paymentStatus => ",paymentStatus);
                 setLoading(false);
+                if(paymentStatus.STATUS =="TXN_SUCCESS"){
+                  window.Paytm.CheckoutJS.close();
+                  Swal.fire(
+                    'Order Placed',
+                    'successfully',
+                    'success'
+                  )
+                }
+                else{
+                  window.Paytm.CheckoutJS.close();
+                  Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: 'Something went wrong!',
+                  })
+                }
+               
               },
               "notifyMerchant":function notifyMerchant(eventName,data){
                 console.log("Closed");
+                console.log("))))))))> Merchent ", data)
                 setLoading(false);
               }
             }
@@ -207,6 +219,8 @@ useEffect(() => {
             console.log('Before JS Checkout invoke');
             // after successfully update configuration invoke checkoutjs
             window.Paytm.CheckoutJS.invoke();
+            console.log("====>",window.Paytm.CheckoutJS)
+            
         }).catch(function onError(error) {
             console.log("config====>",config)
             console.log("Error => ", error);
@@ -229,12 +243,12 @@ useEffect(() => {
 //  }
 
     return (
-      <>
+      <div className="mainDiv">
       <div className="EnterAmount">
         <h1>Enter Amount</h1>
         <input className="enter-amount-inpt" onChange={inputHandler}/>
       </div>
-        <div>
+        <div className="payButton">
             {
                 loading ? (
                     <img src="https://c.tenor.com/I6kN-6X7nhAAAAAj/loading-buffering.gif" />
@@ -243,7 +257,9 @@ useEffect(() => {
                 )
             }
         </div>
-        </>
+
+        {}
+        </div>
     )
     
 }
